@@ -14,6 +14,7 @@ This project is a simple RESTful API built with [IBM WebSphere Liberty](https://
 - [Testing](#testing)
 - [Code Explanation](#code-explanation)
 - [Dependencies](#dependencies)
+- [Summary](#summary)
 
 ---
 
@@ -49,8 +50,9 @@ You can create your Liberty project in one of the following ways:
 
 3. **Add the Liberty Plugin and Dependencies:**
 Update your `build.gradle` file with the Liberty plugin and provided dependencies (see Package Configuration below).
+
 4. **Configure the Project Structure:**
-Place your source code under src/main/java, your configuration files under src/main/resources, and your tests under `src/test/groovy`.
+Place your source code under `src/main/java`, your configuration files under `src/main/resources`, and your tests under `src/test/groovy`.
 
 ---
 
@@ -82,7 +84,7 @@ Place your source code under src/main/java, your configuration files under src/m
 - **Response Example:**
 ```json
 {
-"msg": "Hello my name is John and i'm 30years old!",
+"msg": "Hello my name is John and i'm 30 years old!",
 }
 ```
 ### Request Body Greeting
@@ -96,53 +98,132 @@ Response Example:
 }
 ```
 ## Package Configuration
-Build Configuration (build.gradle)
+### Build Configuration (build.gradle)
+
 ```gradle
 plugins {
-id 'war'
-id 'io.openliberty.tools.gradle.Liberty' version '3.9.2'
+    id'java'
+    id 'war'
+    id 'io.openliberty.tools.gradle.Liberty' version '3.9.2'
+    id 'groovy'
 }
 
 version '1.0-SNAPSHOT'
 group 'dim.kal'
 
-sourceCompatibility = 21
-targetCompatibility = 21
+sourceCompatibility = 17
+targetCompatibility = 17
 tasks.withType(JavaCompile) {
-options.encoding = 'UTF-8'
+    options.encoding = 'UTF-8'
 }
 
 repositories {
-mavenCentral()
+    mavenCentral()
 }
 
 dependencies {
-// Provided dependencies from Liberty runtime
-providedCompile 'jakarta.platform:jakarta.jakartaee-api:10.0.0'
-providedCompile 'org.eclipse.microprofile:microprofile:7.0'
-
-    // Testing dependencies
+    // provided dependencies
+    providedCompile 'jakarta.platform:jakarta.jakartaee-api:10.0.0' 
+    providedCompile 'org.eclipse.microprofile:microprofile:7.0'
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
     testImplementation 'org.codehaus.groovy:groovy-all:3.0.8'
-    testImplementation 'io.rest-assured:rest-assured:5.3.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.glassfish.jersey.core:jersey-common:3.1.2'
+    testImplementation 'org.glassfish.jersey.core:jersey-server:3.1.2'
+    testImplementation 'org.glassfish.jersey.inject:jersey-hk2:3.1.2'
+    testImplementation 'org.eclipse:yasson:2.0.1'
+
 }
 
 clean.dependsOn 'libertyStop'
 
-tasks.withType(Copy) {
-duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+tasks.named('test'){
+    useJUnitPlatform()
 }
 
-tasks.named("processResources", Copy) {
-duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
+```
+1. **Plugins:**
 
-tasks.named("processTestResources", Copy) {
-duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+The `plugins` block defines which Gradle plugins to use:
+- `id 'java'`: This plugin applies the basic Java plugin to your project, enabling standard Java compilation and testing tasks.
+- `id 'war'`: This plugin is used to build a WAR (Web Application Archive) file, which is typically used for Java web applications.
+- `id 'io.openliberty.tools.gradle.Liberty' version '3.9.2'`: This plugin integrates the IBM Open Liberty application server with Gradle. It allows you to start, stop, and configure Liberty tasks from Gradle. Version 3.9.2 is specified here.
+- `id 'groovy'`: This plugin adds support for the Groovy programming language. It's used for writing Groovy-based tests (e.g., Spock framework) in this project.
+
+2. **Version and Group:**
+- `version '1.0-SNAPSHOT'`: Specifies the current version of the project. The SNAPSHOT means this is a development version that may change.
+- `group 'dim.kal'`: Defines the group ID (organization or project namespace) for the project.
+
+3. **Source and Target Compatibility:**
+- `sourceCompatibility = 17`: Specifies the Java source compatibility version (Java 17 here). This means the code is compiled as if it was written for Java 17.
+targetCompatibility = 17: Specifies the version of the JVM bytecode that will be generated (also Java 17).
+
+4. **Java Compilation Options**:
+```gradle
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
 }
 ```
-This build configuration uses the Liberty Gradle plugin to package the project as a WAR file and manage Liberty tasks (start/stop). The provided dependencies (Jakarta EE and MicroProfile APIs) are not packaged in the WAR because Liberty supplies them. Test dependencies include `Spock` for ``Groovy`-based testing and `REST Assured` for integration tests.
+This section sets the encoding for the Java source files to `UTF-8`.
+
+5. **Repositories:**
+
+```gradle
+repositories {
+    mavenCentral()
+}
+```
+Defines the repositories from which to fetch dependencies. Here, it specifies Maven Central, which is a public repository hosting many commonly used Java libraries.
+
+6. **Dependencies:**
+
+    Dependencies define the libraries that are required for the project.
+
+- `Provided Dependencies`:
+
+    - `providedCompile 'jakarta.platform:jakarta.jakartaee-api:10.0.0'`: The Jakarta EE API is provided by the Liberty server, so it's marked as a "provided" dependency. This means it will not be packaged in the WAR file since Liberty already provides it at runtime.
+    - `providedCompile 'org.eclipse.microprofile:microprofile:7.0'`: The MicroProfile API is also provided by Liberty, so it's similarly marked as provided.
+- `Test Dependencies`:
+
+    - `testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'`: Adds Spock as the testing framework, which is Groovy-based. Spock is used for writing tests with a more expressive syntax.
+    - `testImplementation 'org.codehaus.groovy:groovy-all:3.0.8'`: Adds Groovy, which is the language used for Spock-based tests.
+    - `testImplementation 'org.junit.jupiter:junit-jupiter'`: JUnit Jupiter is the new generation of JUnit (JUnit 5) and is used for unit tests.
+    - `testRuntimeOnly 'org.junit.platform:junit-platform-launcher'`: JUnit Platform is required for running tests in the JUnit 5 ecosystem.
+    - `testImplementation 'org.glassfish.jersey.core:jersey-common:3.1.2'`: Adds Jersey libraries for working with RESTful web services.
+    - `testImplementation 'org.glassfish.jersey.core:jersey-server:3.1.2'`: Adds server-side functionality for testing REST APIs.
+    - `testImplementation 'org.glassfish.jersey.inject:jersey-hk2:3.1.2'`: Provides dependency injection for Jersey (part of the Jersey server).
+    - `testImplementation 'org.eclipse:yasson:2.0.1'`: Adds Yasson, which is the JSON-B (Jakarta JSON Binding) implementation used by Jersey.
+
+7. **Clean Task Dependency:**
+
+    ```gradle
+    clean.dependsOn 'libertyStop'
+    ```
+    This line ensures that when the clean task is executed, it will first stop the Liberty server if it's running. This is helpful when you're cleaning the build and want to ensure the server is stopped before proceeding.
+
+8. **Test Task Configuration:**
+
+    ```gradle
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
+    ```
+
+    This configures the test task to use JUnit Platform, which is the foundation for running JUnit 5 tests. It enables running both JUnit 5 and Spock tests.
+---
+
+### Key Points:
+- **The project is set up to be packaged as a WAR file** to run in an application server, specifically IBM Open Liberty, which provides Jakarta EE and MicroProfile.
+
+- **Dependencies are managed** carefully, with runtime dependencies marked as "provided" (like Jakarta EE and MicroProfile) to avoid including them in the WAR file, since Liberty provides them.
+
+- **Testing** is configured with the Spock framework for Groovy-based tests and JUnit 5 for traditional Java tests.
+
+- **The Liberty Gradle plugin** integrates with the IBM Open Liberty application server for starting, stopping, and deploying the application.
+
+
+
 
 ## Testing
 The project includes integration tests written with Spock (Groovy) that verify both direct controller invocation and full endpoint integration via HTTP requests. The tests use a fluent "given-when-then" syntax and logging for debugging.
@@ -156,7 +237,7 @@ From the project root, run:
 ```
 ### Example Test Scenarios
 - **Direct Controller Test (RestResourceSpec):**
-Tests the controller methods directly (unit-style) using Spock. It verifies the response status and message for GET requests (both root and with path parameters), query parameter requests, and POST requests with a JSON body.
+Tests the controller methods directly (unit-style) using Spock. It verifies the response status and message for `GET` requests (both root and with path parameters), query parameter requests, and `POST` requests with a JSON body.
 Test class has been renamed to `RestResourceSpec` for clarity.
 
 - **HTTP Integration Test (IntegrationResourceController):**
@@ -166,7 +247,9 @@ Test class has been renamed to `IntegrationRestResourceSpec` for clarity.
 ---
 
 ## Code Explanation
-- REST Controller (RestController.java)
+
+- **REST Controller (RestController.java)**
+
 ```java
 package dim.kal.rest.resourceControllers;
 
@@ -234,7 +317,7 @@ public class RestController {
 }
 ```
 
-This controller defines REST endpoints using `Jakarta EE/JAX-RS` annotations. It returns a Greeting object, which is automatically serialized to JSON. Each method handles specific scenarios, including missing parameters (returning HTTP 400).
+This controller defines REST endpoints using `Jakarta EE/JAX-RS` annotations. It returns a `Greeting` object, which is automatically serialized to JSON. Each method handles specific scenarios, including missing parameters (returning HTTP 400).
 
 
 - **Greeting.java**
@@ -282,49 +365,14 @@ private Integer age;
     }
 }
 ```
-GreetingRequest.java
-(Optional if used for POST requests instead of reusing the Greeting model)
 
-java
-Copy
-Edit
-package dim.kal.rest.models;
+The Greeting model represents the JSON response. The `@JsonInclude` annotation omits null values, so only initialized fields appear in the output.
 
-public class GreetingRequest {
-private String name;
-private Integer age;
+### Testing Code Explanation
 
-    public GreetingRequest() {
-    }
+- **Direct Controller Tests (RestResourceSpec.groovy)**
 
-    public GreetingRequest(String name, Integer age) {
-        this.name = name;
-        this.age = age;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-}
-The Greeting model represents the JSON response. The @JsonInclude annotation omits null values, so only initialized fields appear in the output.
-
-Testing
-Direct Controller Tests (RestResourceSpec.groovy)
-groovy
-Copy
-Edit
+```groovy
 package dim.kal.rest.resourceControllers
 
 import dim.kal.rest.models.Greeting
@@ -401,12 +449,12 @@ import spock.lang.Specification
        "Tom"  || null|| 400    || "Name or age can't be null"
   }
   }
+  ```
   This Spock test class (renamed to RestResourceSpec for clarity) tests the controller methods directly by invoking them and asserting on the returned Response object.
 
-HTTP Integration Tests (IntegrationRestResourceSpec.groovy)
-groovy
-Copy
-Edit
+- **HTTP Integration Tests (IntegrationRestResourceSpec.groovy)**
+```groovy
+
 package dim.kal.rest.resourceControllers
 
 import dim.kal.rest.models.Greeting
@@ -512,18 +560,35 @@ import java.net.http.HttpResponse
        responseBody.msg == "Hello my name is: " + bodyReq.getName() + " and my age is: " + bodyReq.getAge() + " old!!"
   }
   }
-  This integration test class (renamed to IntegrationRestResourceSpec) uses Java’s HttpClient and Groovy’s JsonSlurper to send actual HTTP requests to the Liberty server. It verifies responses for GET requests (both with and without parameters) and for POST requests with a JSON body.
+  ```
+  This integration test class (renamed to IntegrationRestResourceSpec) uses Java’s `HttpClient` and Groovy’s `JsonSlurper` to send actual HTTP requests to the Liberty server. It verifies responses for GET requests (both with and without parameters) and for `POST`requests with a JSON body.
 
-Dependencies
-Key dependencies used in this project:
+---
 
-Jakarta EE/MicroProfile APIs:
-jakarta.jakartaee-api:10.0.0 and org.eclipse.microprofile:microprofile:7.0 (provided by Liberty)
-Spock Framework:
-org.spockframework:spock-core:2.0-groovy-3.0
-org.codehaus.groovy:groovy-all:3.0.8
-REST Assured:
-io.rest-assured:rest-assured:5.3.0 for integration tests (if used in tests)
-JUnit Platform Launcher:
-org.junit.platform:junit-platform-launcher (for running tests)
+## Dependencies
+### Key dependencies used in this project:
 
+ - **Jakarta EE/MicroProfile APIs:**
+    - `jakarta.platform:jakarta.jakartaee-api:10.0.0` – Provides Jakarta EE APIs for building enterprise applications.
+    - `org.eclipse.microprofile:microprofile:7.0` – Supports MicroProfile features for cloud-native Java applications.
+- **Spock Framework (Testing):**
+    - `org.spockframework:spock-core:2.0-groovy-3.0` – A powerful testing framework for Java/Groovy applications.
+    - `org.codehaus.groovy:groovy-all:3.0.8` – Required for Groovy-based Spock tests.
+- **JUnit 5 (Unit Testing):**
+    - `org.junit.jupiter:junit-jupiter` – JUnit 5 API for writing and running tests.
+    - `org.junit.platform:junit-platform-launcher` – Enables running JUnit tests on different platforms.
+- **Jersey (JAX-RS Support & Testing):**
+    - `org.glassfish.jersey.core:jersey-common:3.1.2` – Provides core components for Jersey-based JAX-RS applications.
+    - `org.glassfish.jersey.core:jersey-server:3.1.2` – Supports server-side JAX-RS implementations.
+    - `org.glassfish.jersey.inject:jersey-hk2:3.1.2` – Provides dependency injection support with HK2 for Jersey.
+- **Yasson (JSON Processing):**
+    - `org.eclipse:yasson:2.0.1` – A reference implementation of JSON-B for converting Java objects to JSON and vice versa.
+
+    ---
+
+ ## Summary
+   This project demonstrates how to build a RESTful API using `IBM WebSphere Liberty`, `Jakarta EE`, and `MicroProfile`. It includes:
+- A structured `Gradle-based project` with Jakarta EE and MicroProfile features.
+- A `REST API` with endpoints for handling `GET` and `POST` requests using `path parameters`, `query parameters`, and `JSON request bodies`.
+- `Unit and integration tests` using `Spock` and Java’s `HttpClient`.
+- A well-organized `build configuration` with the Liberty Gradle plugin for automated deployment.
