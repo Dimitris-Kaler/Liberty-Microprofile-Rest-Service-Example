@@ -12,7 +12,10 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-class IntegrationResourceController extends Specification {
+/**
+ * Integration tests for the REST service using HTTP requests.
+ */
+class IntegrationResourceSpec extends Specification {
     static final String LIBERTY_REST_EXAMPLE_URL = "http://localhost:9080/rest-service-example/api/"
 
     @Shared
@@ -26,7 +29,7 @@ class IntegrationResourceController extends Specification {
         jsonb = JsonbBuilder.create()        // Correct way to initialize Jsonb using JsonbBuilder
     }
 
-    def "200: successfully submit a request"() {
+    def "200: successfully submit a GET request to the root endpoint"() {
         given:
         def request = createGetRequest()
 
@@ -44,7 +47,7 @@ class IntegrationResourceController extends Specification {
 
     }
 
-    def "200 succesfull response with path params request"(){
+    def "200: successfully submit a GET request with path parameters"(){
         given:
         def name = "John"
         and:
@@ -60,6 +63,46 @@ class IntegrationResourceController extends Specification {
         def responseBody = new JsonSlurper().parseText(jsonResponse.body())
         println "Response message: ${responseBody.msg}"
         responseBody.msg == "Hello John!"
+    }
+
+    def "200: successfully submit a GET request with query parameters"(){
+        given:
+        def name ="Xantakias"
+        def age =33
+        and:
+        def request = createGetRequestWithQueryPrams(name,age)
+
+        when:
+        def jsonResponse = client.send(request,HttpResponse.BodyHandlers.ofString())
+        then:
+        jsonResponse.statusCode() == 200
+
+        and:
+        def responseBody = new JsonSlurper().parseText(jsonResponse.body())
+        println "Response message: ${responseBody.msg}"
+        responseBody.msg == "Hello my name is: Xantakias and my age is: 33 old!!"
+
+    }
+
+    def "200: successfully submit a POST request with a valid JSON body"(){
+        given:
+        def bodyReq = new Greeting()
+        bodyReq.setName("Xantakias")
+        bodyReq.setAge(33)
+
+        and:
+        def request = createPostRequest(bodyReq)
+
+        when:
+        def jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString())
+
+        then: 'the response is successful'
+        jsonResponse.statusCode() == 200
+
+        and:'The expected msg'
+        def responseBody = new JsonSlurper().parseText(jsonResponse.body())
+        responseBody.msg == "Hello my name is: Xantakias and my age is: 33 old!!"
+
     }
 
     def "400 BAD Request response with invalid path or query params"(){
@@ -79,46 +122,9 @@ class IntegrationResourceController extends Specification {
         responseBody.msg == "Name or age can't be null"
     }
 
-    def"200 succesfull request with query params"(){
-        given:
-        def name ="Xantakias"
-        def age =33
-        and:
-        def request = createGetRequestWithQueryPrams(name,age)
-
-        when:
-        def jsonResponse = client.send(request,HttpResponse.BodyHandlers.ofString())
-        then:
-        jsonResponse.statusCode() == 200
-
-        and:
-        def responseBody = new JsonSlurper().parseText(jsonResponse.body())
-        println "Response message: ${responseBody.msg}"
-        responseBody.msg == "Hello my name is: Xantakias and my age is: 33 old!!"
-
-    }
-
-    def "200:succesfull request with bodyReq"(){
-        given:
-        def bodyReq = new Greeting()
-        bodyReq.setName("Xantakias")
-        bodyReq.setAge(33)
-
-        and:
-        def request = createPostRequest(bodyReq)
-
-        when:
-        def jsonResponse = client.send(request, HttpResponse.BodyHandlers.ofString())
 
 
-        then: 'the response is successful'
-        jsonResponse.statusCode() == 200
 
-        and:'The expected msg'
-        def responseBody = new JsonSlurper().parseText(jsonResponse.body())
-        responseBody.msg == "Hello my name is: Xantakias and my age is: 33 old!!"
-
-    }
 
 
     def "400 :BAD request with bodyReq.age setted null"(){
